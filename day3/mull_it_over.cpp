@@ -18,14 +18,24 @@ int main(int argc, char *argv[]) {
     memory_stream << memory_file.rdbuf();
     std::string memory_contents = memory_stream.str();
 
-    std::regex mul_regex("mul\\((\\d+),(\\d+)\\)");
-    auto mul_begin = std::sregex_iterator(memory_contents.begin(), memory_contents.end(), mul_regex);
+    std::regex conditional_mul_regex("do\\(\\)|don't\\(\\)|mul\\((\\d+),(\\d+)\\)");
+    auto mul_begin = std::sregex_iterator(memory_contents.begin(), memory_contents.end(), conditional_mul_regex);
     auto mul_end = std::sregex_iterator();
 
-    int sum_of_muls = std::accumulate(mul_begin, mul_end, 0, [](int sum, const auto& match) {
-        return sum + std::stoi(match.str(1)) * std::stoi(match.str(2));
-    });
-    std::cout << "result: " << sum_of_muls << "\n";
+    bool enabled = true;
+    int sum = 0;
+    for (auto& i = mul_begin; i != mul_end; ++i) {
+        std::smatch match = *i;
+        if (match.str() == "do()") {
+            enabled = true;
+        } else if (match.str() == "don't()") {
+            enabled = false;
+        } else if (enabled) {
+            sum += std::stoi(match.str(1)) * std::stoi(match.str(2));
+        }
+    }
+        
+    std::cout << "result: " << sum << "\n";
 
     return 0;
 }
