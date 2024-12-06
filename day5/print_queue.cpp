@@ -58,7 +58,6 @@ bool does_violate_rule(int before, int after, std::vector<int> const& update, pa
             // std::cout << after_page << ", ";
             if (after_page == before) {
                 // we found the putative "before" page in our putative "after" page's 'after' tree.
-                std::cout << before << " found in the 'occurs after' list of " << after << " at " << after_page << "\n";
                 return true;
             }
             to_check.push(after_page);
@@ -73,11 +72,10 @@ bool does_violate_rule(int before, int after, std::vector<int> const& update, pa
 bool is_update_valid(std::vector<int> const& update, page_ordering_rules_t& rules) {
     std::vector<int> earlier_pages;
     // check against all the earlier pages to make sure that this page shouldn't occur before them, then add this to the earlier pages list
-    std::cout << "checking update ";
-    for (int p : update) {
-        std::cout << p << ", ";
-    }
-    std::cout << "\n";
+    //for (int p : update) {
+    //    std::cout << p << ", ";
+    //}
+    // std::cout << "\n";
     for (int i = 0; i < update.size(); ++i) {
         int page = update[i];
         bool page_out_of_order = std::any_of(std::cbegin(update), std::cbegin(update) + i,
@@ -86,13 +84,23 @@ bool is_update_valid(std::vector<int> const& update, page_ordering_rules_t& rule
                                               });
         if (page_out_of_order) { return false; }
     }
-    std::cout << "VALID UPDATE!\n";
     return true;
 }
 
 
 int get_middle_page_if_valid(std::vector<int> const& update, page_ordering_rules_t& rules) {
     return is_update_valid(update, rules) ? update[update.size() / 2] : 0;
+}
+
+int get_middle_page_of_corrected_update(std::vector<int>& update, page_ordering_rules_t& rules) {
+    if (is_update_valid(update, rules)) {
+        return 0;
+    }
+    std::sort(update.begin(), update.end(), [&rules](int a, int b) {
+        // return true if a can come before b
+        return rules[b].find(a) == rules[b].end();
+    });
+    return update[update.size() / 2];
 }
 
 int main(int argc, char *argv[]) {
@@ -103,9 +111,9 @@ int main(int argc, char *argv[]) {
     }
     auto [rules, updates] = parse_input(argv[1]);
     std::cout << "I count " << rules.size() << " rules and " << updates.size() << " updates\n";
-    std::for_each(std::cbegin(updates), std::cend(updates), [&rules](auto const& update) {
-       std::cout << "update of length " << update.size() << " is " << (is_update_valid(update, rules) ? "" : "not ") << "valid\n"; });
-    int sum = std::accumulate(std::cbegin(updates), std::cend(updates), 0, [&rules](int accum, const auto& update){ return accum + get_middle_page_if_valid(update, rules); });
+    // part1: int sum = std::accumulate(std::cbegin(updates), std::cend(updates), 0, [&rules](int accum, const auto& update){ return accum + get_middle_page_if_valid(update, rules); });
+    // part2
+    int sum = std::accumulate(std::begin(updates), std::end(updates), 0, [&rules](int accum, auto& update){ return accum + get_middle_page_of_corrected_update(update, rules); });
     std::cout << "sum " << sum << "\n";
     return 0;
 }
